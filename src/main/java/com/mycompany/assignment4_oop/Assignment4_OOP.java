@@ -5,6 +5,7 @@
 package com.mycompany.assignment4_oop;
 
 import java.io.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Date;
 
@@ -74,7 +75,7 @@ class Doctor extends Person implements Serializable{
         try{
             ObjectOutputStream writer = new ObjectOutputStream(new FileOutputStream(doctorFile,true));
             writer.writeObject(this);
-            System.out.println("Data saved to file Successfully");
+            System.out.println("Doctor Data saved to file Successfully");
         }catch (Exception e){
             System.out.println("Error saving data to file");
         }
@@ -114,7 +115,7 @@ class Doctor extends Person implements Serializable{
 
     @Override
     public String toString() {
-        return "Doctor{" +
+        return "{" +
                 "specialization='" + specialization + '\'' +
                 ", ID=" + ID +
                 ", name='" + name + '\'' +
@@ -141,7 +142,7 @@ class Patient extends Person implements Serializable{
         try{
             ObjectOutputStream writer = new ObjectOutputStream(new FileOutputStream(patientFile,true));
             writer.writeObject(this);
-            System.out.println("Data saved to file Successfully");
+            System.out.println("Patient data saved to file Successfully");
         }catch (Exception e){
             System.out.println("Error saving data to file");
         }
@@ -181,7 +182,7 @@ class Patient extends Person implements Serializable{
 
     @Override
     public String toString() {
-        return "Patient{" +
+        return "{" +
                 "illness='" + illness + '\'' +
                 ", ID=" + ID +
                 ", name='" + name + '\'' +
@@ -196,10 +197,15 @@ class Patient extends Person implements Serializable{
 class Appointment implements Serializable{
     private Doctor doctor;
     private Patient patient;
-    private Date date;
+    private LocalDate date;
     private static final String appointmentFile = "appointmentFile";
+    public Appointment() {
+        this.doctor = null;
+        this.patient = null;
+        this.date = null;
+    }
 
-    public Appointment(Doctor doctor, Patient patient, Date date) {
+    public Appointment(Doctor doctor, Patient patient, LocalDate date) {
         this.doctor = doctor;
         this.patient = patient;
         this.date = date;
@@ -208,14 +214,15 @@ class Appointment implements Serializable{
         ArrayList<Appointment> ar = readAllAppointments();
         ar.add(this);
         try{
-            ObjectOutputStream writer = new ObjectOutputStream(new FileOutputStream(appointmentFile));
+            ObjectOutputStream writer = new ObjectOutputStream(new FileOutputStream(appointmentFile,false));          //no append required as writing whole list
             writer.writeObject(ar);
-            System.out.println("Data saved to file Successfully");
+            System.out.println("Apointment saved to file Successfully");
         }catch (Exception e){
             System.out.println("Error saving data to file");
         }
+        updateAppointmentsFile(ar);
     }
-    public  ArrayList<Appointment> readAllAppointments(){
+    public static  ArrayList<Appointment> readAllAppointments(){
         ArrayList<Appointment> ar = new ArrayList<>();
         File file = new File(appointmentFile);
         if (file.exists()){
@@ -228,7 +235,7 @@ class Appointment implements Serializable{
         }
         return ar;
     }
-    public void displayAllAppointments(){
+    public static void displayAllAppointments(){
         ArrayList<Appointment> ar = readAllAppointments();
         int i = 1;
         for(Appointment ap: ar){
@@ -237,29 +244,24 @@ class Appointment implements Serializable{
             i++;
         }
     }
-    public void deleteAppointment(Appointment appoin){
+    public void deleteAppointment(){
         ArrayList<Appointment> ar = readAllAppointments();
-        for(Appointment ap: ar){
-            if(ap.equals(appoin)){              // looking incorrect implementation
-                ar.remove(ap);
-            }
-        }
-        updateAppoinmentsFile(ar);
+        ar.remove(this);
+        updateAppointmentsFile(ar);
     }
-    public void updateAppointment(Appointment appoin){
+    public void updateAppointment(Appointment newApp){
         ArrayList<Appointment> ar = readAllAppointments();
-        for(Appointment ap: ar){
-            if(ap.equals(appoin)){              // looking incorrect implementation
-                ar.add(ap);
-            }
+        int i = ar.indexOf(this);
+        if (i >= 0){
+            ar.set(1,newApp);
         }
-        updateAppoinmentsFile(ar);
+        updateAppointmentsFile(ar);
     }
-    public void updateAppoinmentsFile(ArrayList<Appointment> ar){
+    public static void updateAppointmentsFile(ArrayList<Appointment> ar){
         try{
-            ObjectOutputStream writer = new ObjectOutputStream(new FileOutputStream(appointmentFile));
+            ObjectOutputStream writer = new ObjectOutputStream(new FileOutputStream(appointmentFile,false));
             writer.writeObject(ar);
-            System.out.println("Data updated Successfully");
+            System.out.println("Files updated Successfully");
         }catch (Exception e){
             System.out.println("Error updating file");
         }
@@ -273,7 +275,7 @@ class Appointment implements Serializable{
         this.patient = patient;
     }
 
-    public void setDate(Date date) {
+    public void setDate(LocalDate date) {
         this.date = date;
     }
 
@@ -285,24 +287,66 @@ class Appointment implements Serializable{
         return patient;
     }
 
-    public Date getDate() {
+    public LocalDate getDate() {
         return date;
     }
 
     @Override
     public String toString() {
-        return "Appointment: " +
-                "\ndoctor=" + doctor.name +
-                "\npatient=" + patient.name +
+        return "doctor=" + doctor.toString() +
+                "\npatient=" + patient.toString() +
                 "\ndate=" + date.toString() ;
     }
     public void display(){
         System.out.println(this.toString());
+        System.out.println();
     }
 }
 public class Assignment4_OOP {
 
     public static void main(String[] args) {
+
+        Doctor doctor = new Doctor(1,"Qasim Ali",35,"Cardiologist");
+        doctor.saveDoctor();
+
+        Patient patient1 = new Patient(2,"Nafees",22,"Heart Failure");
+        Patient patient2 = new Patient(2,"Raza",22,"High Blood Pressure");
+        patient1.savePatient();
+        patient2.savePatient();
+
+        Appointment appointment1 = new Appointment(doctor,patient1, LocalDate.of(2023,12,18));
+        Appointment appointment2 = new Appointment(doctor,patient2,LocalDate.of(2024,1,5));
+        appointment1.saveAppointment();
+        appointment2.saveAppointment();
+
+        Appointment.displayAllAppointments();
+
+        ArrayList<Appointment> ar = Appointment.readAllAppointments();
+        ArrayList<Appointment> todayAppoin = new ArrayList<Appointment>();      // arraylist for saving today appointments
+
+        for(Appointment ap : ar){
+            if(ap.getDate().equals(LocalDate.now())){
+                todayAppoin.add(ap);        // adding to arraylist of today appointments
+                System.out.println("Today Appointment: ");
+                ap.display();
+            }
+        }
+        System.out.println("Moving dates one day ahead!");
+        for(Appointment ap : todayAppoin){
+            int i = ar.indexOf(ap);         // checking index of today appointment in total appointments
+            ap.setDate(ap.getDate().plusDays(1));
+            ar.set(i,ap);
+            System.out.println("After changind Date of  Appointment: ");
+            ap.display();
+        }
+
+        //updating file after moving date one day ahead
+        Appointment.updateAppointmentsFile(ar);
+
+
+
+
+
 
     }
 }
